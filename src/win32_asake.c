@@ -7,13 +7,50 @@
 
 #include "resource.h"
 
-void ShowLastError(HWND hwnd, LPCSTR error_msg) {
+static BITMAPINFO BitmapInfo;
+static void *BitmapMemory;
+static HBITMAP BitmapHandle;
+static HDC BitmapDeviceContext;
+
+void ShowLastError(HWND Handle, LPCSTR ErrorMessage) {
   LPVOID lpMsgBuf;
   if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                     GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL)) {
-    MessageBox(hwnd, (LPCSTR)lpMsgBuf, error_msg, MB_OK | MB_ICONINFORMATION);
+    MessageBox(Handle, (LPCSTR)lpMsgBuf, ErrorMessage, MB_OK | MB_ICONINFORMATION);
     LocalFree(lpMsgBuf);
   }
+}
+
+// DIB stands for Device Independent Bitmap
+// Resize the DIB section or create one if it as never been made.
+static void Win32ResizeDIBSection(int Width, int Height) {
+  // TODO(tijani): Bulletproof this.
+  // Maybe don't free first, free after, then free first if that fails.
+
+  // TODO(tijani): Free the DIBSection
+  if (BitmapHandle) {
+    DeleteObject(BitmapHandle);
+  }
+  if (!BitmapDeviceContext) {
+    // TODO(tijani): Should this be recreated under certair circumstances like unpluging a monitor and pluging in a
+    // higher resolution one?
+    BitmapDeviceContext = CreateCompatibleDC(0);
+  }
+
+  // BITMAPINFO BitmapInfo;
+  BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
+  BitmapInfo.bmiHeader.biWidth = Width;
+  BitmapInfo.bmiHeader.biHeight = Height;
+  BitmapInfo.bmiHeader.biPlanes = 1;
+  BitmapInfo.bmiHeader.biBitCount = 32;
+  BitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+  BitmapHandle = CreateDIBSection(BitmapDeviceContext, &BitmapInfo, DIB_RGB_COLORS, &BitmapMemory, 0, 0);
+}
+
+static void Win32UpdateWindow(HDC DeviceContext, int X, int Y, int Width, int Height) {
+  StretchDIBits(DeviceContext, X, Y, Width, Height, X, Y, Width, Height, BitmapMemory, &BitmapInfo, DIB_RGB_COLORS,
+                SRCCOPY);
 }
 
 LRESULT CALLBACK WndProc(HWND WindowHandle, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -29,6 +66,15 @@ LRESULT CALLBACK WndProc(HWND WindowHandle, UINT msg, WPARAM wParam, LPARAM lPar
     }
     break;
 
+  case WM_SIZE: {
+    RECT ClientRect;
+    GetClientRect(WindowHandle, &ClientRect);
+    int Width = ClientRect.right - ClientRect.left;
+    int Height = ClientRect.bottom - ClientRect.top;
+
+    Win32ResizeDIBSection(Width, Height);
+  } break;
+
   case WM_DESTROY:
     PostQuitMessage(0);
     break;
@@ -39,22 +85,17 @@ LRESULT CALLBACK WndProc(HWND WindowHandle, UINT msg, WPARAM wParam, LPARAM lPar
     DestroyWindow(WindowHandle);
     break;
 
-  case WM_PAINT:
+  case WM_PAINT: {
     PAINTSTRUCT Paint;
     HDC DeviceContext = BeginPaint(WindowHandle, &Paint);
     int X = Paint.rcPaint.left;
     int Y = Paint.rcPaint.top;
     int Height = Paint.rcPaint.bottom - Paint.rcPaint.top;
     int Width = Paint.rcPaint.right - Paint.rcPaint.left;
-    static DWORD Operation = WHITENESS;
-    PatBlt(DeviceContext, X, Y, Width, Height, Operation);
-    if(Operation == WHITENESS){
-      Operation = BLACKNESS;
-    }else {
-      Operation = WHITENESS;
-    }
-    EndPaint(WindowHandle, &Paint);
 
+    Win32UpdateWindow(DeviceContext, X, Y, Width, Height);
+    EndPaint(WindowHandle, &Paint);
+  } break;
   default:
     return DefWindowProc(WindowHandle, msg, wParam, lParam);
     break;
@@ -81,8 +122,8 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Command, in
 
   SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 
-  HWND WindowHandle = CreateWindow(WindowClass.lpszClassName, "Asake", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 575, 74,
-                                   1080, 720, NULL, NULL, Instance, NULL);
+  HWND WindowHandle = CreateWindow(WindowClass.lpszClassName, "Asake", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 575, 74, 1080,
+                                   720, NULL, NULL, Instance, NULL);
 
   if (WindowHandle == NULL) {
     ShowLastError(WindowHandle, "Error: Window Creation Failed");
