@@ -1,0 +1,11 @@
+#pragma code_page(65001) // set character encoding to UTF-8
+#include "resource.h"
+#include <windows.h>
+
+//IDI_FONT FONT "LiberationMono-Regular.ttf"
+IDI_ICON ICON "icon.ico"
+
+IDR_MENU_ACCELERATOR ACCELERATORS
+BEGIN
+	"Q", ID_QUIT, CONTROL, VIRTKEY; 		// Ctrl+Q or q
+END
