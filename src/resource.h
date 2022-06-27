@@ -9,5 +9,4 @@
 #define IDI_ICON 1000
 #define ID_QUIT 1001
 
-
 #endif // RESOURCE_H
