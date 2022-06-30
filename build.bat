@@ -1,7 +1,7 @@
 @echo off
 
 set CC=cl
-set SHARED_FLAGS=/nologo /Feasake /std:c++14 /W3 /FC
+set SHARED_FLAGS=/nologo /Feasake /std:c11 /W3 /FC
 
 if "%~1" == "release" (
     set args=release
@@ -28,7 +28,7 @@ echo ------------------------------
 echo Building Resources
 rc /nologo ..\src\resource.rc
 
-%CC% %SHARED_FLAGS% %BUILD_ARGS% ..\src\win32_asake.cpp kernel32.lib user32.lib gdi32.lib Shcore.lib /link ..\src\resource.res
+%CC% %SHARED_FLAGS% %BUILD_ARGS% ..\src\win32_asake.c kernel32.lib user32.lib gdi32.lib Shcore.lib /link ..\src\resource.res
 popd
 
 
