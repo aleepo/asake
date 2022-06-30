@@ -3,9 +3,9 @@
 #include <windows.h>
 
 //IDI_FONT FONT "LiberationMono-Regular.ttf"
-IDI_ICON ICON "icon.ico"
+ID_ICON ICON "icon.ico"
 
-IDR_MENU_ACCELERATOR ACCELERATORS
+ID_MENU_ACCELERATOR ACCELERATORS
 BEGIN
 	"Q", ID_QUIT, CONTROL, VIRTKEY; 		// Ctrl+Q or q
 END
