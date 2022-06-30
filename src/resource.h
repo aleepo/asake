@@ -6,7 +6,7 @@
 #define RESOURCE_H
 
 #define IDC_STATIC -1
-#define IDI_ICON 1000
+#define ID_ICON 1000
 #define ID_QUIT 1001
 
 #endif // RESOURCE_H
