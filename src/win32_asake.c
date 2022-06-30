@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <windows.h>
 
+
 #include "resource.h"
 
 static bool RUNNING;
