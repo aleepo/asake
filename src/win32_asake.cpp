@@ -30,27 +30,15 @@ static void RenderWeirdGradient(int XOffset, int YOffset) {
 
   uint8_t *Row = (uint8_t *)BitmapMemory;
   int Pitch = Width * BytesPerPixels;
+
   for (int Y = 0; Y < BitmapHeight; ++Y) {
-    uint8_t *Pixel = (uint8_t *)Row;
+    uint32_t *Pixel = (uint32_t *)Row;
     for (int X = 0; X < BitmapWidth; ++X) {
 
-      // This is backwards because of little endian
+      uint8_t Green = (Y + YOffset);
+      uint8_t Blue = (X + XOffset);
 
-      // Blue
-      *Pixel = (uint8_t)(X + XOffset);
-      ++Pixel;
-
-      // Green
-      *Pixel = (uint8_t)(Y + YOffset);
-      ++Pixel;
-
-      // Red
-      *Pixel = 0;
-      ++Pixel;
-
-      // Padding
-      *Pixel = 0;
-      ++Pixel;
+      *Pixel++ = ((Green << 8) | Blue);
     }
     Row += Pitch;
   }
@@ -94,12 +82,13 @@ static void Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int X, int Y,
 LRESULT CALLBACK WndProc(HWND WindowHandle, UINT msg, WPARAM wParam, LPARAM lParam) {
   static HINSTANCE hInstance;
   switch (msg) {
-  // WM_COMMAND - application menu
+    //  WM_COMMAND - application menu
   case WM_COMMAND:
     switch (LOWORD(wParam)) {
 
     case ID_QUIT:
-      PostQuitMessage(0);
+      RUNNING = false;
+      PostQuitMessage(WM_CLOSE);
       break;
     }
     break;
@@ -114,25 +103,27 @@ LRESULT CALLBACK WndProc(HWND WindowHandle, UINT msg, WPARAM wParam, LPARAM lPar
   } break;
 
   case WM_DESTROY:
-    PostQuitMessage(0);
+    RUNNING = false;
+    PostQuitMessage(WM_CLOSE);
     break;
 
     // NOTE: May want to ask the user if they would really like to exit the
     // program in the event they have unsaved work.
   case WM_CLOSE:
+    RUNNING = false;
     DestroyWindow(WindowHandle);
     break;
 
   case WM_PAINT: {
     PAINTSTRUCT Paint;
     HDC DeviceContext = BeginPaint(WindowHandle, &Paint);
-    RECT ClientRect;
-    GetClientRect(WindowHandle, &ClientRect);
     int X = Paint.rcPaint.left;
     int Y = Paint.rcPaint.top;
     int Height = Paint.rcPaint.bottom - Paint.rcPaint.top;
     int Width = Paint.rcPaint.right - Paint.rcPaint.left;
 
+    RECT ClientRect;
+    GetClientRect(WindowHandle, &ClientRect);
     Win32UpdateWindow(DeviceContext, &ClientRect, X, Y, Width, Height);
     EndPaint(WindowHandle, &Paint);
   } break;
@@ -145,13 +136,11 @@ LRESULT CALLBACK WndProc(HWND WindowHandle, UINT msg, WPARAM wParam, LPARAM lPar
 
 int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Command, int ShowCode) {
   WNDCLASS WindowClass = {0};
-  HACCEL haccel;
   WindowClass.style = CS_HREDRAW | CS_VREDRAW;
   WindowClass.lpfnWndProc = WndProc;
   WindowClass.hInstance = Instance;
   WindowClass.hIcon = LoadIcon(Instance, MAKEINTRESOURCE(IDI_ICON));
   WindowClass.hCursor = NULL;
-  WindowClass.hbrBackground = GetSysColorBrush(COLOR_3DFACE);
   WindowClass.lpszMenuName = NULL;
   WindowClass.lpszClassName = "AsakeClass";
 
@@ -174,25 +163,34 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Command, in
   UpdateWindow(WindowHandle);
 
   // Load accelerator table
-  haccel = LoadAccelerators(Instance, "IDR_MENU_ACCELERATOR");
-
-  /* while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)){ */
-  /*    if (!TranslateAccelerator(WindowHandle, haccel, &msg)) { */
-  /*     TranslateMessage(&msg); */
-  /*     DispatchMessage(&msg); */
-  /*   } */
-  /* } */
+  HACCEL AcceleratorHandle = LoadAccelerators(Instance, "IDR_MENU_ACCELERATOR");
 
   RUNNING = true;
-  while (RUNNING) {
-    MSG msg = {0};
 
-    while (GetMessage(&msg, NULL, 0, 0)) {
-      if (!TranslateAccelerator(WindowHandle, haccel, &msg)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+  int XOffset = 0;
+  int YOffset = 0;
+
+  while (RUNNING) {
+    MSG Message;
+    while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE)) {
+      if (!TranslateAccelerator(WindowHandle, AcceleratorHandle, &Message)) {
+        TranslateMessage(&Message);
+        DispatchMessage(&Message);
       }
+
+      RenderWeirdGradient(XOffset, YOffset);
+
+      HDC DeviceContext = GetDC(WindowHandle);
+      RECT WindowRect;
+      GetClientRect(WindowHandle, &WindowRect);
+      int WindowWidth = WindowRect.right - WindowRect.left;
+      int WindowHeight = WindowRect.bottom - WindowRect.top;
+
+      Win32UpdateWindow(DeviceContext, &WindowRect, 0, 0, WindowWidth, WindowHeight);
+      ReleaseDC(WindowHandle, DeviceContext);
+      --XOffset;
+      YOffset -= 2;
     }
   }
-  return (int)(msg.wParam);
+  return 0;
 }
