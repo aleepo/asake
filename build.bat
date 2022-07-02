@@ -1,7 +1,8 @@
 @echo off
 
 set CC=cl
-set SHARED_FLAGS=/nologo /Feasake /std:c11 /W3 /FC
+set SHARED_FLAGS=/nologo /std:c11 /W3 /FC
+set BUILD_DIR=bin
 
 if "%~1" == "release" (
     set args=release
@@ -11,12 +12,12 @@ if "%~1" == "release" (
 
 if %args% == release (
    echo "Release Build"
-   set BUILD_DIR=release_build
-   set BUILD_ARGS=/O2 /Os
+   rem set BUILD_DIR=release_build
+   set BUILD_ARGS=/O2 /Os /Feasake_release
 ) else (
    echo "Debug Build"
-   set BUILD_DIR=debug_build
-   set BUILD_ARGS=/Z7
+   rem set BUILD_DIR=debug_build
+   set BUILD_ARGS=/Z7 /Feasake_debug
 )
 
 RD /S /Q %BUILD_DIR%
