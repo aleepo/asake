@@ -21,6 +21,9 @@ typedef struct {
   int Height;
 } Win32Dimension;
 
+/* typdef  DWORD WINAPI XInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState); */
+/* DWORD WINAPI XInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration); */
+
 Win32Dimension GetWindowDimension(HWND WindowHandle) {
   Win32Dimension result;
 
@@ -98,7 +101,7 @@ static void Win32CopyBufferToWindow(OffscreenBuffer Buffer, HDC DeviceContext, i
   )
   */
   // TODO(tijani): Aspect ratio correction.
-  
+
   StretchDIBits(DeviceContext, 0, 0, WindowWidth, WindowHeight, 0, 0, Buffer.Width, Buffer.Height, Buffer.Memory,
                 &Buffer.Info, DIB_RGB_COLORS, SRCCOPY);
 }
@@ -140,7 +143,6 @@ LRESULT CALLBACK Win32MainWindowCallback(HWND WindowHandle, UINT Message, WPARAM
     //    Win32Dimension Dimension = GetWindowDimension(WindowHandle);
 
   } break;
-
   default:
     CallbackResult = DefWindowProc(WindowHandle, Message, WParam, LParam);
     break;
@@ -150,7 +152,8 @@ LRESULT CALLBACK Win32MainWindowCallback(HWND WindowHandle, UINT Message, WPARAM
 
 int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Command, int ShowCode) {
   WNDCLASS WindowClass = {0};
-  WindowClass.style = CS_HREDRAW | CS_VREDRAW;
+  // NOTE()
+  WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
   WindowClass.lpfnWndProc = Win32MainWindowCallback;
   WindowClass.hInstance = Instance;
   WindowClass.hIcon = LoadIcon(Instance, MAKEINTRESOURCE(ID_ICON));
@@ -181,6 +184,11 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Command, in
   // Load accelerator table
   HACCEL AcceleratorHandle = LoadAccelerators(Instance, "ID_MENU_ACCELERATOR");
 
+  /* NOTE: Since CS_OWNDC is specified, then get a single device context and use it for the
+     lifetime of the program because it is not being shared with anyone.
+   */
+  HDC DeviceContext = GetDC(WindowHandle);
+
   int XOffset = 0;
   int YOffset = 0;
 
@@ -197,13 +205,12 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Command, in
       }
     }
     RenderWeirdGradient(GlobalBackBuffer, XOffset, YOffset);
-    HDC DeviceContext = GetDC(WindowHandle);
+
     Win32Dimension Dimension = GetWindowDimension(WindowHandle);
     Win32CopyBufferToWindow(GlobalBackBuffer, DeviceContext, Dimension.Width, Dimension.Height);
-    ReleaseDC(WindowHandle, DeviceContext);
 
     ++XOffset;
-    YOffset += 2;
+    YOffset += 10;
   }
   return (0);
 }
