@@ -166,7 +166,8 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Command, in
     return 1;
   }
 
-  SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+  // Important on newer generation laptops and monitor so the Window does'nt look pixilated.
+  SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); 
 
   HWND WindowHandle = CreateWindow(WindowClass.lpszClassName, "Asake", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 575, 74, 1080,
                                    720, NULL, NULL, Instance, NULL);
