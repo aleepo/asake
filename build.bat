@@ -31,10 +31,3 @@ rc /nologo ..\src\resource.rc
 
 %CC% %SHARED_FLAGS% %BUILD_ARGS% ..\src\win32_asake.c kernel32.lib user32.lib gdi32.lib Shcore.lib Xinput9_1_0.lib /link ..\src\resource.res
 popd
-
-
-rem if %args% == release (
-
-rem ) else (
-
-rem )
