@@ -3,7 +3,7 @@
 A really simple and rudimentary way of getting some pixels on the screen specifically for windows using the win32 API. It is also a good ground(ish) work for a software renderer.
 
 ### Demo
-![Asake Demo](.\doc\demo.png)
+![Asake Demo](/doc/demo.PNG)
 
 ### Building
 Make sure you have MSVC installed and you can use the compiler from the command prompt. Running `vcvarsall` before attempting to compile covers all you need.
